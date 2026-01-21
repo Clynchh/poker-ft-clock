@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Tournament Chess Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff4500, #ff6500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            flex-shrink: 0;
+        }
+
+        .setup-panel, .game-panel {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .setup-panel.active, .game-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Setup Panel Styling */
+        .setup-panel {
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 20px;
+            border: 2px solid #ff4500;
+            box-shadow: 0 0 40px rgba(255, 69, 0, 0.3);
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .setup-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .setup-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group-large {
+            grid-column: span 2;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: #ff4500;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ff4500;
+            border-radius: 10px;
+            background: rgba(255, 69, 0, 0.1);
+            color: white;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            margin-bottom: 5px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff6500;
+            background: rgba(255, 69, 0, 0.2);
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+        }
+
+        .player-names-section {
+            background: rgba(255, 69, 0, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+        }
+
+        .player-names-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff4500 0%, #ff6500 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+            width: 100%;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 1.3em;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 69, 0, 0.6);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #dc143c 0%, #b22222 100%);
+            color: white;
+            margin: 5px;
+            padding: 10px 20px;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-action:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-fold {
+            background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #ff4500 0%, #ff6500 100%);
+            margin-top: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 2em;
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, #ff8c00 0%, #ff6500 100%);
+        }
+
+        .setup-info {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 69, 0, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .setup-info h2 {
+            color: #ff4500;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .setup-info p {
+            color: #ccc;
+            line-height: 1.5;
+        }
+
+        /* Timer Layout */
+        .timer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            height: 400px;
+            flex-shrink: 0;
+        }
+
+        .side-timer {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            width: 120px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border: 3px solid #ff4500;
+            border-radius: 15px;
+        }
+
+        .side-timer.left {
+            transform: rotate(180deg);
+        }
+
+        .side-timer-label {
+            font-size: 1em;
+            color: #ff4500;
+            margin-bottom: 10px;
+        }
+
+        .side-timer-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+
+        .center-timers {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 20px;
+        }
+
+        .main-timer {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 30px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            border: 4px solid #ff4500;
+            box-shadow: 0 0 40px rgba(255, 69, 0, 0.3);
+            transform: rotate(180deg);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .dealer-timer {
+            text-align: center;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            border: 2px solid #ff4500;
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .main-timer-label {
+            font-size: 1.8em;
+            color: #ff4500;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .main-timer-display {
+            font-size: 6em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: white;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        .dealer-timer-label {
+            font-size: 1em;
+            color: #ff4500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .dealer-timer-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+
+        .timer.grace {
+            border-color: #32cd32;
+            box-shadow: 0 0 30px rgba(50, 205, 50, 0.5);
+            animation: pulseGreenBorder 1s infinite;
+        }
+
+        .timer.emergency {
+            border-color: #dc143c;
+            box-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
+            animation: pulseRedBorder 0.5s infinite;
+        }
+
+        @keyframes pulseGreenBorder {
+            0%, 100% { box-shadow: 0 0 30px rgba(50, 205, 50, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(50, 205, 50, 0.8); }
+        }
+
+        @keyframes pulseRedBorder {
+            0%, 100% { box-shadow: 0 0 30px rgba(220, 20, 60, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(220, 20, 60, 0.8); }
+        }
+
+        .players-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .player-card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            min-width: 120px;
+            flex: 1;
+            max-width: 150px;
+        }
+
+        .player-card.active {
+            border-color: #ff4500;
+            background: rgba(255, 69, 0, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.5);
+        }
+
+        .player-card.eliminated {
+            opacity: 0.3;
+            background: rgba(139, 0, 0, 0.2);
+        }
+
+        .player-card.dead-button {
+            border: 2px dashed #808080;
+            opacity: 0.6;
+        }
+
+        .player-name {
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ff4500;
+        }
+
+        .player-timer {
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+            color: white;
+        }
+
+        .player-position {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .position-dealer {
+            background: linear-gradient(135deg, #ff4500, #ff6500);
+            color: white;
+        }
+
+        .position-dead-dealer {
+            background: linear-gradient(135deg, #808080, #696969);
+            color: white;
+        }
+
+        .position-sb {
+            background: linear-gradient(135deg, #dc143c, #b22222);
+            color: white;
+        }
+
+        .position-bb {
+            background: linear-gradient(135deg, #8b0000, #dc143c);
+            color: white;
+        }
+
+        .street-indicator {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff4500 0%, #ff6500 100%);
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .action-controls {
+            text-align: center;
+            margin: 15px 0;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 2px solid #ff4500;
+            border-radius: 15px;
+            flex-shrink: 0;
+        }
+
+        .pause-indicator {
+            text-align: center;
+            font-size: 1.8em;
+            color: #ff4500;
+            margin: 20px 0;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .player-name-input {
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #000000;
+            border: 3px solid #ff4500;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #ff4500;
+        }
+
+        .eliminate-player {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        .eliminate-player input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .player-names-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timer-section {
+                height: 300px;
+            }
+
+            .main-timer-display {
+                font-size: 4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Poker Tournament Chess Clock</h1>
+        
+        <!-- Setup Panel -->
+        <div class="setup-panel active" id="setupPanel">
+            <div class="setup-info">
+                <h2>Tournament Setup</h2>
+                <p>Configure your poker tournament settings below. The timer will track each player's time bank with grace periods and emergency time.</p>
+            </div>
+            
+            <div class="setup-grid">
+                <div class="setup-left">
+                    <div class="form-group">
+                        <label for="playerCount">Number of Players</label>
+                        <select id="playerCount">
+                            <option value="2">2 Players</option>
+                            <option value="3">3 Players</option>
+                            <option value="4">4 Players</option>
+                            <option value="5">5 Players</option>
+                            <option value="6" selected>6 Players</option>
+                            <option value="7">7 Players</option>
+                            <option value="8">8 Players</option>
+                            <option value="9">9 Players</option>
+                            <option value="10">10 Players</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timePerPlayer">Time Bank (seconds)</label>
+                        <select id="timePerPlayer">
+                            <option value="120">2 Minutes</option>
+                            <option value="180">3 Minutes</option>
+                            <option value="240">4 Minutes</option>
+                            <option value="300" selected>5 Minutes</option>
+                            <option value="420">7 Minutes</option>
+                            <option value="600">10 Minutes</option>
+                            <option value="900">15 Minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firstPlayer">First Player to Act</label>
+                        <select id="firstPlayer"></select>
+                    </div>
+                </div>
+                
+                <div class="setup-right">
+                    <div class="player-names-section">
+                        <label>Player Names</label>
+                        <div id="playerNamesContainer" class="player-names-grid"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="startTournament()">🚀 Start Tournament</button>
+        </div>
+        
+        <!-- Game Panel -->
+        <div class="game-panel" id="gamePanel">
+            <div class="pause-indicator" id="pauseIndicator" style="display: none;">⏸ PAUSED</div>
+            
+            <!-- Timer Section -->
+            <div class="timer-section">
+                <div class="side-timer left" id="leftTimer">
+                    <div class="side-timer-label" id="leftTimerLabel">Player</div>
+                    <div class="side-timer-display" id="leftTimerDisplay">0:00</div>
+                </div>
+                
+                <div class="center-timers">
+                    <div class="main-timer timer" id="mainTimer">
+                        <div class="main-timer-label" id="mainTimerLabel">Current Player</div>
+                        <div class="main-timer-display" id="mainTimerDisplay">0:00</div>
+                    </div>
+                    
+                    <div class="dealer-timer timer" id="dealerTimer">
+                        <div class="dealer-timer-label" id="dealerTimerLabel">Dealer View</div>
+                        <div class="dealer-timer-display" id="dealerTimerDisplay">0:00</div>
+                    </div>
+                </div>
+                
+                <div class="side-timer right" id="rightTimer">
+                    <div class="side-timer-label" id="rightTimerLabel">Player</div>
+                    <div class="side-timer-display" id="rightTimerDisplay">0:00</div>
+                </div>
+            </div>
+            
+            <div class="players-container" id="playersContainer"></div>
+            
+            <div class="street-indicator" id="streetIndicator">PREFLOP</div>
+            
+            <div class="action-controls">
+                <h3>Current Player Action:</h3>
+                <button class="btn-action btn-fold" onclick="playerAction('fold')">FOLD</button>
+                <button class="btn-action" id="checkBtn" onclick="playerAction('check')">CHECK</button>
+                <button class="btn-action" id="callBtn" onclick="playerAction('call')">CALL</button>
+                <button class="btn-action" onclick="playerAction('bet')">BET/RAISE</button>
+                <br>
+                <button class="btn-pause" id="pauseBtn" onclick="togglePause()">⏸</button>
+                <button class="btn-action btn-skip" onclick="skipHand()">SKIP HAND</button>
+            </div>
+        </div>
+        
+        <!-- Hand End Modal -->
+        <div class="modal" id="handEndModal">
+            <div class="modal-content">
+                <h2>Hand Complete</h2>
+                <p>Select players to eliminate:</p>
+                <div id="eliminateList"></div>
+                <button class="btn-primary" onclick="finishHand()">Start Next Hand</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentPlayerIndex = 0;
+        let dealerIndex = 0;
+        let street = 'preflop';
+        let betFacing = false;
+        let lastBettorIndex = -1;
+        let playersInHand = [];
+        let isPaused = false;
+        let timerInterval = null;
+        let currentTimer = 0;
+        let isGracePeriod = false;
+        let isEmergency = false;
+        let streetPauseTimeout = null;
+        let playersActedThisRound = new Set();
+        let bigBlindIndex = -1;
+        let smallBlindIndex = -1;
+        let hasBeenRaised = false;
+        let isDeadButton = false;
+
+        // Initialize player names input
+        document.getElementById('playerCount').addEventListener('change', updatePlayerNames);
+        updatePlayerNames();
+
+        function updatePlayerNames() {
+            const count = parseInt(document.getElementById('playerCount').value);
+            const container = document.getElementById('playerNamesContainer');
+            const firstPlayerSelect = document.getElementById('firstPlayer');
+            
+            container.innerHTML = '';
+            firstPlayerSelect.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'player-name-input';
+                input.placeholder = `Player ${i + 1}`;
+                input.id = `playerName${i}`;
+                input.value = `Player ${i + 1}`;
+                container.appendChild(input);
+                
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Player ${i + 1}`;
+                firstPlayerSelect.appendChild(option);
+            }
+        }
+
+        function startTournament() {
+            const count = parseInt(document.getElementById('playerCount').value);
+            const timePerPlayer = parseInt(document.getElementById('timePerPlayer').value);
+            const firstPlayerIndex = parseInt(document.getElementById('firstPlayer').value);
+            
+            players = [];
+            for (let i = 0; i < count; i++) {
+                const name = document.getElementById(`playerName${i}`).value || `Player ${i + 1}`;
+                players.push({
+                    name: name,
+                    timeLeft: timePerPlayer,
+                    inHand: true,
+                    eliminated: false,
+                    index: i
+                });
+            }
+            
+            // Set initial positions
+            dealerIndex = (firstPlayerIndex - 3 + count) % count;
+            setBlindPositions();
+            currentPlayerIndex = firstPlayerIndex;
+            playersInHand = players.map((_, i) => i).filter(i => !players[i].eliminated);
+            playersActedThisRound = new Set();
+            hasBeenRaised = false;
+            isDeadButton = false;
+            
+            // On preflop, everyone except BB is facing a bet
+            if (street === 'preflop') {
+                betFacing = true;
+                lastBettorIndex = bigBlindIndex;
+            }
+            
+            document.getElementById('setupPanel').classList.remove('active');
+            document.getElementById('gamePanel').classList.add('active');
+            
+            renderPlayers();
+            updateAllTimers();
+            startPlayerTimer();
+        }
+
+        function setBlindPositions() {
+            const activePlayers = players.filter((_, i) => !players[i].eliminated);
+            const activeCount = activePlayers.length;
+            
+            if (activeCount <= 2) {
+                // Heads up: dealer is small blind
+                smallBlindIndex = dealerIndex;
+                bigBlindIndex = getNextActivePlayer(dealerIndex);
+            } else {
+                // Normal: SB = dealer + 1, BB = dealer + 2
+                smallBlindIndex = getNextActivePlayer(dealerIndex);
+                bigBlindIndex = getNextActivePlayer(smallBlindIndex);
+                
+                // If BB would be eliminated, move it to next active seat
+                while (players[bigBlindIndex].eliminated) {
+                    bigBlindIndex = getNextActivePlayer(bigBlindIndex);
+                }
+            }
+        }
+
+        function getNextActivePlayer(startIndex) {
+            let index = (startIndex + 1) % players.length;
+            while (players[index].eliminated && index !== startIndex) {
+                index = (index + 1) % players.length;
+            }
+            return index;
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = '';
+            
+            players.forEach((player, index) => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                
+                if (player.eliminated) {
+                    card.classList.add('eliminated');
+                } else if (index === currentPlayerIndex && !isPaused) {
+                    card.classList.add('active');
+                }
+                
+                // Check for dead button
+                if (index === dealerIndex && isDeadButton) {
+                    card.classList.add('dead-button');
+                }
+                
+                let position = '';
+                if (!player.eliminated || (player.eliminated && index === dealerIndex && isDeadButton)) {
+                    if (index === dealerIndex) {
+                        if (isDeadButton) {
+                            position = '<span class="player-position position-dead-dealer">DEAD</span>';
+                        } else {
+                            position = '<span class="player-position position-dealer">D</span>';
+                        }
+                    } else if (index === smallBlindIndex && !players[smallBlindIndex].eliminated) {
+                        position = '<span class="player-position position-sb">SB</span>';
+                    } else if (index === bigBlindIndex && !players[bigBlindIndex].eliminated) {
+                        position = '<span class="player-position position-bb">BB</span>';
+                    }
+                }
+                
+                card.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-timer">${formatTime(player.timeLeft)}</div>
+                    ${position}
+                    ${player.inHand && !player.eliminated ? '' : '<div style="color: #dc143c;">FOLDED</div>'}
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            updateActionButtons();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateAllTimers() {
+            const mainTimer = document.getElementById('mainTimer');
+            const dealerTimer = document.getElementById('dealerTimer');
+            const leftTimer = document.getElementById('leftTimer');
+            const rightTimer = document.getElementById('rightTimer');
+            
+            const mainTimerLabel = document.getElementById('mainTimerLabel');
+            const mainTimerDisplay = document.getElementById('mainTimerDisplay');
+            const dealerTimerLabel = document.getElementById('dealerTimerLabel');
+            const dealerTimerDisplay = document.getElementById('dealerTimerDisplay');
+            const leftTimerLabel = document.getElementById('leftTimerLabel');
+            const leftTimerDisplay = document.getElementById('leftTimerDisplay');
+            const rightTimerLabel = document.getElementById('rightTimerLabel');
+            const rightTimerDisplay = document.getElementById('rightTimerDisplay');
+            
+            if (!players[currentPlayerIndex] || players[currentPlayerIndex].eliminated || !players[currentPlayerIndex].inHand) {
+                mainTimerLabel.textContent = 'Waiting...';
+                mainTimerDisplay.textContent = '0:00';
+                dealerTimerLabel.textContent = 'Dealer View';
+                dealerTimerDisplay.textContent = '0:00';
+                leftTimerLabel.textContent = 'Player';
+                leftTimerDisplay.textContent = '0:00';
+                rightTimerLabel.textContent = 'Player';
+                rightTimerDisplay.textContent = '0:00';
+                
+                mainTimer.className = 'main-timer timer';
+                dealerTimer.className = 'dealer-timer timer';
+                return;
+            }
+            
+            const player = players[currentPlayerIndex];
+            const playerName = player.name;
+            
+            // Update labels
+            mainTimerLabel.textContent = playerName;
+            dealerTimerLabel.textContent = playerName;
+            leftTimerLabel.textContent = playerName;
+            rightTimerLabel.textContent = playerName;
+            
+            let displayTime, timerClass = 'timer';
+            if (isGracePeriod) {
+                displayTime = `Grace: ${currentTimer}`;
+                timerClass = 'timer grace';
+            } else if (isEmergency) {
+                displayTime = `Emergency: ${currentTimer}`;
+                timerClass = 'timer emergency';
+            } else {
+                displayTime = formatTime(currentTimer);
+                timerClass = 'timer';
+            }
+            
+            // Update displays
+            mainTimerDisplay.textContent = displayTime;
+            dealerTimerDisplay.textContent = displayTime;
+            leftTimerDisplay.textContent = displayTime;
+            rightTimerDisplay.textContent = displayTime;
+            
+            // Update classes
+            mainTimer.className = `main-timer ${timerClass}`;
+            dealerTimer.className = `dealer-timer ${timerClass}`;
+        }
+
+        function startPlayerTimer() {
+            if (isPaused) return;
+            
+            clearInterval(timerInterval);
+            isGracePeriod = true;
+            isEmergency = false;
+            currentTimer = 5;
+            
+            updateAllTimers();
+            
+            timerInterval = setInterval(() => {
+                if (isPaused) return;
+                
+                currentTimer--;
+                
+                if (isGracePeriod) {
+                    if (currentTimer <= 0) {
+                        isGracePeriod = false;
+                        currentTimer = players[currentPlayerIndex].timeLeft;
+                    }
+                } else if (!isEmergency) {
+                    if (currentTimer <= 0) {
+                        isEmergency = true;
+                        currentTimer = 5;
+                    } else {
+                        players[currentPlayerIndex].timeLeft = currentTimer;
+                    }
+                } else {
+                    if (currentTimer <= 0) {
+                        // If not facing a bet and emergency time expires, check instead of fold
+                        if (!betFacing && currentPlayerIndex !== lastBettorIndex) {
+                            playerAction('check');
+                        } else {
+                            playerAction('fold');
+                        }
+                        return;
+                    }
+                }
+                
+                updateAllTimers();
+                renderPlayers();
+            }, 1000);
+        }
+
+        function playerAction(action) {
+            if (isPaused && action !== 'pause') return;
+            
+            clearInterval(timerInterval);
+            
+            // Track that this player has acted
+            playersActedThisRound.add(currentPlayerIndex);
+            
+            if (action === 'fold') {
+                players[currentPlayerIndex].inHand = false;
+                playersInHand = playersInHand.filter(i => i !== currentPlayerIndex);
+            } else if (action === 'bet') {
+                betFacing = true;
+                lastBettorIndex = currentPlayerIndex;
+                hasBeenRaised = true;
+                // Reset who has acted when someone bets
+                playersActedThisRound.clear();
+                playersActedThisRound.add(currentPlayerIndex);
+            } else if (action === 'call') {
+                // Call action
+            } else if (action === 'check') {
+                // Check action - if BB checks preflop with no raise, betting is complete
+                if (street === 'preflop' && currentPlayerIndex === bigBlindIndex && !hasBeenRaised) {
+                    // BB check completes preflop betting
+                }
+            }
+            
+            // Check if hand is over
+            if (playersInHand.length === 1) {
+                endHand();
+                return;
+            }
+            
+            // Move to next player
+            moveToNextPlayer();
+            
+            // Check if betting round is complete
+            if (shouldEndBettingRound()) {
+                moveToNextStreet();
+            } else {
+                startPlayerTimer();
+            }
+        }
+
+        function moveToNextPlayer() {
+            do {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            } while ((players[currentPlayerIndex].eliminated || !players[currentPlayerIndex].inHand) && playersInHand.length > 1);
+            
+            renderPlayers();
+        }
+
+        function shouldEndBettingRound() {
+            // Special case for preflop BB option
+            if (street === 'preflop' && currentPlayerIndex === bigBlindIndex && !hasBeenRaised) {
+                // BB gets option if no one raised
+                return playersActedThisRound.has(bigBlindIndex);
+            }
+            
+            // If there's a bet and we've cycled back to the bettor
+            if (betFacing && lastBettorIndex !== -1) {
+                return playersActedThisRound.has(lastBettorIndex) && playersActedThisRound.size >= playersInHand.length;
+            }
+            
+            // If no bet is facing, check if everyone has acted
+            if (!betFacing) {
+                return playersActedThisRound.size >= playersInHand.length;
+            }
+            
+            return false;
+        }
+
+        function moveToNextStreet() {
+            if (street === 'river') {
+                endHand();
+                return;
+            }
+            
+            // Show 6 second pause for dealing
+            isPaused = true;
+            document.getElementById('pauseIndicator').style.display = 'block';
+            document.getElementById('pauseIndicator').textContent = '🎴 Dealing cards... 6';
+            
+            // Clear the timers during dealing
+            document.getElementById('mainTimerLabel').textContent = 'Dealing...';
+            document.getElementById('mainTimerDisplay').textContent = '---';
+            document.getElementById('dealerTimerLabel').textContent = 'Dealing...';
+            document.getElementById('dealerTimerDisplay').textContent = '---';
+            document.getElementById('leftTimerLabel').textContent = 'Dealing...';
+            document.getElementById('leftTimerDisplay').textContent = '---';
+            document.getElementById('rightTimerLabel').textContent = 'Dealing...';
+            document.getElementById('rightTimerDisplay').textContent = '---';
+            document.getElementById('mainTimer').className = 'main-timer timer';
+            document.getElementById('dealerTimer').className = 'dealer-timer timer';
+            
+            let countdown = 6;
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('pauseIndicator').textContent = `🎴 Dealing cards... ${countdown}`;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('pauseIndicator').style.display = 'none';
+                    isPaused = false;
+                    
+                    // Move to next street
+                    if (street === 'preflop') street = 'flop';
+                    else if (street === 'flop') street = 'turn';
+                    else if (street === 'turn') street = 'river';
+                    
+                    document.getElementById('streetIndicator').textContent = street.toUpperCase();
+                    
+                    // Reset betting and acted players
+                    betFacing = false;
+                    lastBettorIndex = -1;
+                    hasBeenRaised = false;
+                    playersActedThisRound.clear();
+                    
+                    // Set first player for post-flop (left of dealer)
+                    currentPlayerIndex = dealerIndex;
+                    moveToNextPlayer();
+                    updateAllTimers();
+                    startPlayerTimer();
+                }
+            }, 1000);
+        }
+
+        function updateActionButtons() {
+            const checkBtn = document.getElementById('checkBtn');
+            const callBtn = document.getElementById('callBtn');
+            
+            // Preflop: only BB can check if no raise, everyone else faces a bet
+            if (street === 'preflop') {
+                if (currentPlayerIndex === bigBlindIndex && !hasBeenRaised) {
+                    // BB can check if no raise
+                    checkBtn.disabled = false;
+                    callBtn.disabled = true;
+                } else {
+                    // Everyone else faces at least the BB
+                    checkBtn.disabled = true;
+                    callBtn.disabled = false;
+                }
+            } else {
+                // Post-flop normal rules
+                if (betFacing) {
+                    checkBtn.disabled = true;
+                    callBtn.disabled = false;
+                } else {
+                    checkBtn.disabled = false;
+                    callBtn.disabled = true;
+                }
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            const pauseIndicator = document.getElementById('pauseIndicator');
+            
+            if (isPaused) {
+                pauseBtn.textContent = '▶';
+                pauseIndicator.style.display = 'block';
+                pauseIndicator.textContent = '⏸ PAUSED';
+                clearInterval(timerInterval);
+            } else {
+                pauseBtn.textContent = '⏸';
+                pauseIndicator.style.display = 'none';
+                startPlayerTimer();
+            }
+        }
+
+        function skipHand() {
+            clearInterval(timerInterval);
+            endHand();
+        }
+
+        function endHand() {
+            clearInterval(timerInterval);
+            
+            // Show elimination modal
+            const modal = document.getElementById('handEndModal');
+            const eliminateList = document.getElementById('eliminateList');
+            
+            eliminateList.innerHTML = '';
+            players.forEach((player, index) => {
+                if (!player.eliminated) {
+                    const div = document.createElement('div');
+                    div.className = 'eliminate-player';
+                    div.innerHTML = `
+                        <input type="checkbox" id="eliminate${index}" value="${index}">
+                        <label for="eliminate${index}">${player.name}</label>
+                    `;
+                    eliminateList.appendChild(div);
+                }
+            });
+            
+            modal.classList.add('active');
+        }
+
+        function finishHand() {
+            // Process eliminations
+            const checkboxes = document.querySelectorAll('#eliminateList input[type="checkbox"]:checked');
+            const eliminatedThisHand = [];
+            
+            checkboxes.forEach(checkbox => {
+                const index = parseInt(checkbox.value);
+                players[index].eliminated = true;
+                eliminatedThisHand.push(index);
+            });
+            
+            // Close modal
+            document.getElementById('handEndModal').classList.remove('active');
+            
+            // Reset for next hand
+            street = 'preflop';
+            document.getElementById('streetIndicator').textContent = 'PREFLOP';
+            
+            // Reset players in hand
+            players.forEach(player => {
+                if (!player.eliminated) {
+                    player.inHand = true;
+                }
+            });
+            playersInHand = players.map((_, i) => i).filter(i => !players[i].eliminated);
+            playersActedThisRound.clear();
+            hasBeenRaised = false;
+            
+            // Handle button progression with dead seats logic
+            moveButtonWithDeadSeats(eliminatedThisHand);
+            
+            // Preflop everyone faces the big blind
+            betFacing = true;
+            lastBettorIndex = bigBlindIndex;
+            
+            // Set first player (left of BB)
+            currentPlayerIndex = getNextActivePlayer(bigBlindIndex);
+            
+            renderPlayers();
+            updateAllTimers();
+            startPlayerTimer();
+        }
+
+        function moveButtonWithDeadSeats(eliminatedThisHand) {
+            const originalButton = dealerIndex;
+            
+            // Check if current button was eliminated
+            const buttonEliminated = eliminatedThisHand.includes(dealerIndex);
+            
+            // Move button to next seat
+            let nextButton = (dealerIndex + 1) % players.length;
+            
+            // Check if the next button seat was eliminated
+            const nextButtonEliminated = eliminatedThisHand.includes(nextButton);
+            
+            if (nextButtonEliminated) {
+                // Next button is dead - keep it there for this hand only
+                dealerIndex = nextButton;
+                isDeadButton = true;
+                
+                // Set blinds normally from the dead button
+                setBlindPositions();
+            } else {
+                // Normal progression
+                dealerIndex = nextButton;
+                isDeadButton = false;
+                
+                // If small blind position would be dead, move button to dead SB seat
+                let wouldBeSB = getNextActivePlayer(dealerIndex);
+                if (eliminatedThisHand.includes(wouldBeSB)) {
+                    dealerIndex = wouldBeSB;
+                    isDeadButton = true;
+                }
+                
+                setBlindPositions();
+            }
+            
+            // Ensure we have valid blind positions
+            while (players[bigBlindIndex].eliminated) {
+                bigBlindIndex = getNextActivePlayer(bigBlindIndex);
+            }
+        }
+    </script>
+</body>
+</html>
